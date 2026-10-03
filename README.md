@@ -7,7 +7,10 @@ to one decimal (`vo2MaxPreciseValue`) but the site shows it rounded.
 - On the report pages, Garmin's Export button is replaced by a precise CSV of the
   range shown (read from the page's date label, last 12 months on "Most Recent").
 - Extra buttons next to it: Export JSON, All time CSV, All time JSON.
-- Chart tooltips and points are not corrected, only the headline numbers.
+- On 4 Weeks / 6 Months / 1 Year the chart is replaced by one with a point per day and the
+  precise value (hover for the date and value). To its right it lists Garmin's VO₂ max
+  ranges (Superior to Poor) for your age and sex, with your current category highlighted.
+  The "Garmin's chart" button next to the export buttons switches back to Garmin's own chart.
 
 Works on `https://connect.garmin.com/app/*`. It reads the same `maxmet` endpoints
 Garmin's own page uses, with the page's CSRF token. Nothing leaves connect.garmin.com.

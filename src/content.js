@@ -41,15 +41,99 @@
       });
   }
 
-  function currentRange() {
+  function labelRange() {
     const now = new Date();
     for (const text of G.findRangeCandidates(document.body)) {
       const r = G.parseRangeLabel(text, now);
       if (r) return r;
     }
+    return null;
+  }
+
+  function currentRange() {
+    const found = labelRange();
+    if (found) return found;
     // "Most Recent" tab has no date label: default to the last 12 months.
-    const end = G.todayIso(now);
+    const end = G.todayIso();
     return { start: G.shiftIso(end, -365), end };
+  }
+
+  // Ranges panel data (Garmin's static table + the user's gender/birth date): loaded once,
+  // never retried until reload (the observer fires constantly).
+  let rangeTable = null;
+  let profile = null;
+  let rangesLoading = false;
+  let rangesFailed = false;
+
+  function ensureRanges() {
+    if (rangesLoading || rangesFailed || (rangeTable && profile)) return;
+    rangesLoading = true;
+    Promise.all([G.fetchRangeTable(ctx), G.fetchProfile(ctx)])
+      .then(([t, p]) => {
+        rangeTable = t;
+        profile = p;
+      })
+      .catch((e) => {
+        rangesFailed = true;
+        log('could not load VO2 max ranges', e);
+      })
+      .finally(() => {
+        rangesLoading = false;
+        tick();
+      });
+  }
+
+  function legendNow() {
+    if (!rangeTable || !profile) return null;
+    return G.describe(rangeTable, profile, new Date(), latest ? latest.vo2MaxPrecise : null);
+  }
+
+  // Precise daily chart, replacing Garmin's monthly rounded one on 4 Weeks / 6 Months / 1 Year.
+  const chartRows = new Map(); // range key -> running rows with a precise value
+  const chartLoading = new Set();
+  const chartFailed = new Set(); // never retried until reload
+  let showGarmin = false;
+
+  function loadChartRows(key, range) {
+    if (chartLoading.has(key) || chartFailed.has(key)) return;
+    chartLoading.add(key);
+    G.fetchRange(range.start, range.end, ctx)
+      .then((raw) => {
+        chartRows.set(key, G.rowsFromRaw(raw).filter((r) => r.sport === 'running' && r.vo2MaxPrecise != null));
+      })
+      .catch((e) => {
+        chartFailed.add(key);
+        log('could not load chart data', e);
+      })
+      .finally(() => {
+        chartLoading.delete(key);
+        tick();
+      });
+  }
+
+  function tickChart() {
+    const range = isVo2Report() ? labelRange() : null;
+    if (!range || !G.findGarminChart(document) || showGarmin) {
+      G.removeChart(document);
+      return;
+    }
+    const key = `${range.start}_${range.end}`;
+    if (chartFailed.has(key)) {
+      G.removeChart(document);
+      return;
+    }
+    ensureRanges();
+    const rows = chartRows.get(key);
+    if (!rows) {
+      if (G.currentChartKey(document)) G.removeChart(document); // a chart for another range is on screen
+      loadChartRows(key, range);
+      return;
+    }
+    const legend = legendNow();
+    if (G.currentChartKey(document) !== G.chartKey(range, legend)) {
+      G.mountChart(document, G.renderChart(document, rows, range, undefined, legend));
+    }
+    G.setGarminChartHidden(document, true);
   }
 
   let exporting = false;
@@ -83,15 +167,20 @@
     { label: 'Export JSON', onClick: () => runExport({ allTime: false, format: 'json' }) },
     { label: 'All time CSV', onClick: () => runExport({ allTime: true, format: 'csv' }) },
     { label: 'All time JSON', onClick: () => runExport({ allTime: true, format: 'json' }) },
+    { label: "Garmin's chart", onClick: () => { showGarmin = !showGarmin; tick(); } },
   ];
 
   function tick() {
     try {
-      if (!isVo2Report()) document.querySelector('[data-gvp="controls"]')?.remove();
+      if (!isVo2Report()) {
+        document.querySelector('[data-gvp="controls"]')?.remove();
+        G.removeChart(document);
+      }
       if (!PAGES.test(location.pathname)) return;
       ensureLatest();
       if (latest) G.applyPrecise(document.body, latest);
       if (isVo2Report()) G.mountControls(document, actions);
+      tickChart();
     } catch (e) {
       log('tick failed', e);
     }
