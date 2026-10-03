@@ -149,7 +149,61 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  const CHART_AREA = '[class*="ReportsPageContent_reportChart"]';
+
+  function findGarminChart(doc) {
+    return doc.querySelector(`${CHART_AREA} .recharts-responsive-container`);
+  }
+
+  function ensureHideStyle(doc) {
+    if (doc.querySelector(`style[${ATTR}="style"]`)) return;
+    const s = doc.createElement('style');
+    s.setAttribute(ATTR, 'style');
+    s.textContent = `[${ATTR}-hide]{display:none!important}`;
+    (doc.head || doc.documentElement).appendChild(s);
+  }
+
+  function setGarminChartHidden(doc, hidden) {
+    const g = findGarminChart(doc);
+    if (!g) return false;
+    ensureHideStyle(doc);
+    if (hidden) {
+      if (!g.hasAttribute(`${ATTR}-hide`)) g.setAttribute(`${ATTR}-hide`, '');
+    } else {
+      g.removeAttribute(`${ATTR}-hide`);
+    }
+    return true;
+  }
+
+  function currentChartKey(doc) {
+    const el = doc.querySelector(`[${ATTR}="chart"]`);
+    return el ? el.getAttribute(`${ATTR}-key`) : null;
+  }
+
+  function mountChart(doc, el) {
+    const g = findGarminChart(doc);
+    if (!g) return false;
+    const old = doc.querySelector(`[${ATTR}="chart"]`);
+    if (old) {
+      if (old.getAttribute(`${ATTR}-key`) === el.getAttribute(`${ATTR}-key`) && old.nextElementSibling === g) return true;
+      old.remove();
+    }
+    g.insertAdjacentElement('beforebegin', el);
+    return true;
+  }
+
+  function removeChart(doc) {
+    const old = doc.querySelector(`[${ATTR}="chart"]`);
+    if (old) old.remove();
+    setGarminChartHidden(doc, false);
+  }
+
   return {
+    findGarminChart,
+    setGarminChartHidden,
+    mountChart,
+    removeChart,
+    currentChartKey,
     findVo2TextNodes,
     applyPrecise,
     findRangeCandidates,

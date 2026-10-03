@@ -184,3 +184,56 @@ test('applyPrecise ignores a 52 with an unrelated class and no VO2 label', () =>
   const doc = make('<div class="SleepScore_value"><div class="SleepScore_value" id="v">52</div></div>');
   assert.equal(dom.applyPrecise(doc.body, latest), 0);
 });
+
+const chartPage = () =>
+  make(
+    '<div class="ReportsPageContent_reportChart__x"><div id="holder"><div id="g" class="recharts-responsive-container"><div class="recharts-wrapper"></div></div></div></div>'
+  );
+const fakeChart = (doc, key) => {
+  const el = doc.createElement('div');
+  el.setAttribute('data-gvp', 'chart');
+  el.setAttribute('data-gvp-key', key);
+  return el;
+};
+
+test('findGarminChart only matches inside the report chart area', () => {
+  const doc = chartPage();
+  assert.equal(dom.findGarminChart(doc).id, 'g');
+  assert.equal(dom.findGarminChart(make('<div class="recharts-responsive-container"></div>')), null);
+});
+
+test('setGarminChartHidden hides and restores, injects its style once, reports a missing chart', () => {
+  const doc = chartPage();
+  assert.equal(dom.setGarminChartHidden(doc, true), true);
+  assert.equal(doc.getElementById('g').hasAttribute('data-gvp-hide'), true);
+  dom.setGarminChartHidden(doc, true);
+  assert.equal(doc.querySelectorAll('style[data-gvp="style"]').length, 1);
+  assert.match(doc.querySelector('style[data-gvp="style"]').textContent, /display:none/);
+  dom.setGarminChartHidden(doc, false);
+  assert.equal(doc.getElementById('g').hasAttribute('data-gvp-hide'), false);
+  assert.equal(dom.setGarminChartHidden(make('<p/>'), true), false);
+});
+
+test('mountChart inserts before Garmin\'s chart, is idempotent per key, replaces on a new key', () => {
+  const doc = chartPage();
+  assert.equal(dom.mountChart(doc, fakeChart(doc, 'a')), true);
+  assert.equal(doc.getElementById('g').previousElementSibling.getAttribute('data-gvp-key'), 'a');
+  assert.equal(dom.currentChartKey(doc), 'a');
+  dom.mountChart(doc, fakeChart(doc, 'a'));
+  assert.equal(doc.querySelectorAll('[data-gvp="chart"]').length, 1);
+  dom.mountChart(doc, fakeChart(doc, 'b'));
+  assert.equal(doc.querySelectorAll('[data-gvp="chart"]').length, 1);
+  assert.equal(dom.currentChartKey(doc), 'b');
+  assert.equal(dom.mountChart(make('<p/>'), fakeChart(doc, 'z')), false);
+});
+
+test('removeChart removes ours and un-hides Garmin\'s; safe when nothing is mounted', () => {
+  const doc = chartPage();
+  dom.mountChart(doc, fakeChart(doc, 'a'));
+  dom.setGarminChartHidden(doc, true);
+  dom.removeChart(doc);
+  assert.equal(dom.currentChartKey(doc), null);
+  assert.equal(doc.getElementById('g').hasAttribute('data-gvp-hide'), false);
+  dom.removeChart(doc);
+  dom.removeChart(make('<p/>'));
+});
