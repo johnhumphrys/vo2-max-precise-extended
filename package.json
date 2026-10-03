@@ -1,10 +1,19 @@
 {
-  "name": "garmin-vo2max-precise",
-  "version": "0.1.0",
+  "name": "vo2-max-precise-extended",
+  "version": "1.0.0",
   "private": true,
-  "description": "Show and export Garmin Connect's precise VO2 max",
+  "description": "Precise VO2 max, daily chart and age/sex ranges for Garmin Connect (Chrome and Firefox extension)",
+  "license": "MIT",
+  "author": "John Humphrys",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnhumphrys/vo2-max-precise-extended.git"
+  },
+  "homepage": "https://github.com/johnhumphrys/vo2-max-precise-extended",
+  "bugs": "https://github.com/johnhumphrys/vo2-max-precise-extended/issues",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/",
+    "package": "node scripts/package.js"
   },
   "devDependencies": {
     "jsdom": "^26.0.0"
