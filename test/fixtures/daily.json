@@ -1,0 +1,6 @@
+[
+  { "userId": 1, "generic": { "calendarDate": "2026-09-30", "vo2MaxPreciseValue": 52.1, "vo2MaxValue": 52.0, "fitnessAge": null, "fitnessAgeDescription": null, "maxMetCategory": 0 }, "cycling": null, "heatAltitudeAcclimation": {} },
+  { "userId": 1, "generic": { "calendarDate": "2026-10-01", "vo2MaxPreciseValue": 52.2, "vo2MaxValue": 52.0, "fitnessAge": null, "fitnessAgeDescription": null, "maxMetCategory": 0 }, "cycling": { "calendarDate": "2026-10-01", "vo2MaxPreciseValue": 48.4, "vo2MaxValue": 48.0, "fitnessAge": null, "fitnessAgeDescription": null, "maxMetCategory": 0 }, "heatAltitudeAcclimation": {} },
+  { "userId": 1, "generic": null, "cycling": null, "heatAltitudeAcclimation": {} },
+  { "userId": 1, "generic": { "calendarDate": "2026-10-02", "vo2MaxPreciseValue": 52.2, "vo2MaxValue": 52.0, "fitnessAge": 35, "fitnessAgeDescription": null, "maxMetCategory": 0 }, "cycling": null, "heatAltitudeAcclimation": {} }
+]
