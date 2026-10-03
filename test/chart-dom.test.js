@@ -182,3 +182,22 @@ test('renderGaugeLegend is an absolutely positioned ranges list with the current
   assert.equal(rowEls.length, 5);
   assert.deepEqual(rowEls.map((r) => r.hasAttribute('data-gvp-current')), [false, true, false, false, false]);
 });
+
+test('unit label sits clear of the top y tick label', () => {
+  const el = renderChart(doc, rows, range);
+  const texts = [...el.querySelectorAll('svg text')];
+  const unit = texts.find((t) => t.textContent === 'ml/kg/min');
+  const topTick = texts.filter((t) => t.getAttribute('text-anchor') === 'end').map((t) => Number(t.getAttribute('y'))).sort((a, b) => a - b)[0];
+  const unitBaseline = Number(unit.getAttribute('y'));
+  // the unit label's baseline plus a descender must end above the top tick label's cap height (14px font)
+  assert.ok(unitBaseline + 3 < topTick - 11, `unit baseline ${unitBaseline} too close to top tick baseline ${topTick}`);
+});
+
+test('legend title keeps "Men 30-39" together so it wraps before it, not inside it', () => {
+  const el = renderChart(doc, rows, range, undefined, legend);
+  const title = el.querySelector('[data-gvp="legend"]').firstElementChild;
+  assert.equal(title.textContent, 'VO₂ max ranges, Men 30-39');
+  const nowrap = [...title.querySelectorAll('span')].find((s) => s.textContent === 'Men 30-39');
+  assert.ok(nowrap, 'label is in its own span');
+  assert.match(nowrap.style.whiteSpace, /nowrap/);
+});

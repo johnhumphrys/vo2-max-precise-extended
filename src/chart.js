@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.GVP = Object.assign(root.GVP || {}, api);
 })(typeof self !== 'undefined' ? self : globalThis, function () {
-  const MARGIN = { left: 48, right: 14, top: 14, bottom: 30 };
+  const MARGIN = { left: 48, right: 14, top: 26, bottom: 30 }; // top leaves room for the unit label
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const DAY_MS = 86400000;
   const WEEKLY_MAX_DAYS = 45;
@@ -121,7 +121,12 @@
     box.style.cssText = 'flex:0 0 170px;font-size:14px;line-height:1.4';
     const title = doc.createElement('div');
     title.style.cssText = 'font-weight:600;margin-bottom:8px';
-    title.textContent = `VO₂ max ranges, ${legend.label}`;
+    title.appendChild(doc.createTextNode('VO₂ max ranges, '));
+    // keep "Men 30-39" in one piece so a narrow box wraps before it, never inside it
+    const who = doc.createElement('span');
+    who.style.whiteSpace = 'nowrap';
+    who.textContent = legend.label;
+    title.appendChild(who);
     box.appendChild(title);
     for (const r of legend.rows) {
       const row = doc.createElement('div');

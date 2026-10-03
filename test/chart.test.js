@@ -44,12 +44,12 @@ test('layout maps range edges to the plot edges and values to y', () => {
     { date: '2026-10-31', vo2MaxPrecise: 52 },
   ];
   const l = layout(rows, range, size);
-  assert.deepEqual(l.plot, { left: 48, top: 14, right: 856, bottom: 370 });
+  assert.deepEqual(l.plot, { left: 48, top: 26, right: 856, bottom: 370 });
   assert.deepEqual(l.points.map((p) => [p.x, p.y, p.date, p.value]), [
     [48, 370, '2026-05-01', 50],
-    [856, 14, '2026-10-31', 52],
+    [856, 26, '2026-10-31', 52],
   ]);
-  assert.equal(l.path, 'M48 370 L856 14');
+  assert.equal(l.path, 'M48 370 L856 26');
   assert.equal(l.yTicks[0].label, '50.0');
   assert.equal(l.yTicks.length, 5);
   assert.equal(l.xTicks.length, 6);
