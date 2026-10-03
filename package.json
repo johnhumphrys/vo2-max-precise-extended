@@ -13,7 +13,8 @@
   "bugs": "https://github.com/johnhumphrys/vo2-max-precise-extended/issues",
   "scripts": {
     "test": "node --test test/",
-    "package": "node scripts/package.js"
+    "package": "node scripts/package.js",
+    "bump": "node scripts/bump.js"
   },
   "devDependencies": {
     "jsdom": "^26.0.0"
