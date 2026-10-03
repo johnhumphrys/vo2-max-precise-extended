@@ -7,7 +7,9 @@
   const ATTR = 'data-gvp';
   const VO2_CONTEXT = /VO\s?[2₂]\s?Max/i;
   const MAX_CONTEXT_CHARS = 200; // a container this small is the VO2 card itself, not the page
-  const MAX_CONTEXT_DEPTH = 8; // the home gauge value is ~6 levels below its label
+  const MAX_CONTEXT_DEPTH = 12; // the home gauge value's label container is 10 levels up
+  const MAX_CLASS_DEPTH = 4; // the element itself plus 3 ancestors
+  const VO2_CLASS = /VO2Max/i; // CSS-module class names keep a readable prefix, e.g. VO2MaxGaugeChart_value__pd9wO
   const DATE_LIKE = /\d/;
   const SHOW_TEXT = 4;
 
@@ -35,6 +37,8 @@
     for (let i = 0; i < MAX_CONTEXT_DEPTH && p; i++, p = p.parentElement) {
       const t = p.textContent;
       if (t.length < MAX_CONTEXT_CHARS && VO2_CONTEXT.test(t)) return true;
+      const cls = i < MAX_CLASS_DEPTH ? p.getAttribute('class') : null;
+      if (cls && VO2_CLASS.test(cls)) return true;
     }
     return false;
   }
@@ -109,12 +113,13 @@
     else doc.body.appendChild(box);
   }
 
-  function interceptExport(doc, handler) {
+  function interceptExport(doc, handler, shouldIntercept = () => true) {
     doc.addEventListener(
       'click',
       (e) => {
         const btn = e.target && e.target.closest ? e.target.closest('button') : null;
         if (!isGarminExportButton(btn)) return;
+        if (!shouldIntercept()) return;
         e.preventDefault();
         e.stopImmediatePropagation();
         handler();

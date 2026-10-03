@@ -6,22 +6,39 @@
   const log = (...a) => console.warn('[vo2max-precise]', ...a);
   const ctx = { doc: document, fetchFn: (...a) => fetch(...a) };
   const PAGES = /^\/app\/(home|report\/21\/)/;
+  const isVo2Report = () => location.pathname.startsWith('/app/report/21/');
 
-  // Latest value: fetched once per calendar day, never retried on failure
-  // (the observer fires constantly, so a retry loop would hammer Garmin).
+  // Latest value: fetched once per calendar day. The observer fires constantly,
+  // so after a failure retry no sooner than RETRY_MS later, and never while one is in flight.
+  const RETRY_MS = 60000;
   let latestDay = null;
   let latest = null;
+  let inFlight = false;
+  let failed = false;
+  let latestRetryAt = 0;
   function ensureLatest() {
     const day = G.todayIso();
-    if (latestDay === day) return;
-    latestDay = day;
-    latest = null;
+    if (inFlight) return;
+    if (latestDay === day) {
+      if (latest || !failed || Date.now() < latestRetryAt) return;
+    } else {
+      latestDay = day;
+      latest = null;
+    }
+    inFlight = true;
+    failed = false;
     G.fetchLatest(day, ctx)
       .then((raw) => {
         latest = G.rowsFromRaw([raw]).find((r) => r.sport === 'running') || null;
+        inFlight = false;
         tick();
       })
-      .catch((e) => log('could not load latest VO2 max', e));
+      .catch((e) => {
+        inFlight = false;
+        failed = true;
+        latestRetryAt = Date.now() + RETRY_MS;
+        log('could not load latest VO2 max', e);
+      });
   }
 
   function currentRange() {
@@ -35,7 +52,10 @@
     return { start: G.shiftIso(end, -365), end };
   }
 
+  let exporting = false;
   async function runExport({ allTime, format }) {
+    if (exporting) return;
+    exporting = true;
     try {
       let range = allTime ? { start: G.ALL_TIME_START, end: G.todayIso(), allTime: true } : currentRange();
       const raw = await G.fetchRange(range.start, range.end, ctx);
@@ -52,8 +72,10 @@
       log('export failed', e);
       G.showMessage(
         document,
-        e && e.code === 'auth' ? 'Garmin rejected the request. Reload the page or sign in again.' : `Export failed: ${e.message}`
+        e && e.code === 'auth' ? 'Garmin rejected the request. Reload the page or sign in again.' : `Export failed: ${(e && e.message) || 'unknown error'}`
       );
+    } finally {
+      exporting = false;
     }
   }
 
@@ -65,16 +87,17 @@
 
   function tick() {
     try {
+      if (!isVo2Report()) document.querySelector('[data-gvp="controls"]')?.remove();
       if (!PAGES.test(location.pathname)) return;
       ensureLatest();
       if (latest) G.applyPrecise(document.body, latest);
-      if (location.pathname.startsWith('/app/report/21/')) G.mountControls(document, actions);
+      if (isVo2Report()) G.mountControls(document, actions);
     } catch (e) {
       log('tick failed', e);
     }
   }
 
-  G.interceptExport(document, () => runExport({ allTime: false, format: 'csv' }));
+  G.interceptExport(document, () => runExport({ allTime: false, format: 'csv' }), isVo2Report);
 
   let timer = null;
   new MutationObserver(() => {

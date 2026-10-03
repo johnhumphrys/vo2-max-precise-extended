@@ -99,6 +99,34 @@ test('interceptExport swallows Garmin\'s click and runs our handler, not ours', 
   assert.equal(handled, 1);
 });
 
+test('interceptExport leaves Garmin alone when shouldIntercept is false', () => {
+  const doc = make('<button id="g">Export</button>');
+  let garminSaw = 0;
+  let handled = 0;
+  doc.getElementById('g').addEventListener('click', () => garminSaw++);
+  dom.interceptExport(doc, () => handled++, () => false);
+  doc.getElementById('g').click();
+  assert.equal(handled, 0);
+  assert.equal(garminSaw, 1);
+});
+
+test('interceptExport intercepts when shouldIntercept is true', () => {
+  const doc = make('<button id="g">Export</button>');
+  let garminSaw = 0;
+  let handled = 0;
+  doc.getElementById('g').addEventListener('click', () => garminSaw++);
+  dom.interceptExport(doc, () => handled++, () => true);
+  doc.getElementById('g').click();
+  assert.equal(handled, 1);
+  assert.equal(garminSaw, 0);
+});
+
+test('applyPrecise ignores a VO2Max class on an ancestor 6 levels up', () => {
+  const doc = make('<div class="VO2MaxReport_page"><div><div><div><div><div><span id="v">52</span></div></div></div></div></div></div>');
+  assert.equal(dom.applyPrecise(doc.body, latest), 0);
+  assert.equal(doc.getElementById('v').textContent, '52');
+});
+
 test('showMessage adds a removable toast', () => {
   const doc = make('');
   dom.showMessage(doc, 'hello');
@@ -127,4 +155,32 @@ test('mountControls re-anchors a fallback box once Garmin\'s button renders late
   dom.mountControls(doc, actions);
   assert.equal(doc.querySelectorAll('[data-gvp="controls"]').length, 1);
   assert.equal(doc.querySelectorAll('[data-gvp="btn"]').length, 2);
+});
+
+test('applyPrecise finds the home label when its container is 10 levels above the value', () => {
+  // value span is index 0; container div holding the label is index 10:
+  // span(0) < div(1) < foreignObject(2) < g(3) < svg(4) < div(5..9) < container(10)
+  const doc = make(
+    '<div id="c"><div>Running VO₂ Max</div><div><div><div><div><div><svg><g><foreignObject><div><span id="v">52</span></div></foreignObject></g></svg></div></div></div></div></div></div>'
+  );
+  assert.equal(dom.applyPrecise(doc.body, latest), 1);
+  assert.equal(doc.getElementById('v').textContent, '52.3');
+});
+
+test('applyPrecise uses a VO2Max class on the value as a context signal', () => {
+  const filler = 'x'.repeat(300);
+  const doc = make(`<div><div class="VO2MaxGaugeChart_value__x" id="g">52</div><div>Excellent</div><p>${filler}</p></div>`);
+  assert.equal(dom.applyPrecise(doc.body, latest), 1);
+  assert.equal(doc.getElementById('g').textContent, '52.3');
+});
+
+test('applyPrecise does not use the class signal inside a plain svg', () => {
+  const doc = make('<div><svg><text class="VO2MaxTick" id="t">52</text></svg></div>');
+  assert.equal(dom.applyPrecise(doc.body, latest), 0);
+  assert.equal(doc.getElementById('t').textContent, '52');
+});
+
+test('applyPrecise ignores a 52 with an unrelated class and no VO2 label', () => {
+  const doc = make('<div class="SleepScore_value"><div class="SleepScore_value" id="v">52</div></div>');
+  assert.equal(dom.applyPrecise(doc.body, latest), 0);
 });
