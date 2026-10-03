@@ -237,3 +237,75 @@ test('removeChart removes ours and un-hides Garmin\'s; safe when nothing is moun
   dom.removeChart(doc);
   dom.removeChart(make('<p/>'));
 });
+
+const GAUGE_HTML =
+  '<div class="ReportsPageContent_reportChart__x"><p id="p">Your VO₂ Max is 52</p><div id="card" class="Report_chartContainer__a Report_vo2MaxCurrent__b"></div></div>';
+
+test('findGaugeCard finds the gauge block inside the report chart area only', () => {
+  const doc = make(GAUGE_HTML);
+  assert.equal(dom.findGaugeCard(doc), doc.getElementById('card'));
+  assert.equal(dom.findGaugeCard(make('<div class="Report_vo2MaxCurrent__b"></div>')), null);
+  assert.equal(dom.findGaugeCard(make('<div class="ReportsPageContent_reportChart__x"><div class="Other"></div></div>')), null);
+});
+
+test('mountGaugeLegend appends into the card, marks it relative, injects the style', () => {
+  const doc = make(GAUGE_HTML);
+  const el = doc.createElement('div');
+  el.setAttribute('data-gvp', 'gauge-legend');
+  el.setAttribute('data-gvp-key', 'k1');
+  assert.equal(dom.mountGaugeLegend(doc, el), true);
+  const card = doc.getElementById('card');
+  assert.equal(el.parentElement, card);
+  assert.ok(card.hasAttribute('data-gvp-rel'));
+  assert.equal(doc.querySelectorAll('style[data-gvp="style"]').length, 1);
+  assert.match(doc.querySelector('style[data-gvp="style"]').textContent, /\[data-gvp-rel\]/);
+  assert.match(doc.querySelector('style[data-gvp="style"]').textContent, /\[data-gvp-hide\]/);
+  assert.equal(dom.mountGaugeLegend(make('<div></div>'), doc.createElement('div')), false);
+});
+
+test('mounting the same gauge legend key twice keeps one; a new key replaces it', () => {
+  const doc = make(GAUGE_HTML);
+  const mk = (k) => {
+    const e = doc.createElement('div');
+    e.setAttribute('data-gvp', 'gauge-legend');
+    e.setAttribute('data-gvp-key', k);
+    return e;
+  };
+  assert.equal(dom.currentGaugeLegendKey(doc), null);
+  dom.mountGaugeLegend(doc, mk('a'));
+  dom.mountGaugeLegend(doc, mk('a'));
+  assert.equal(doc.querySelectorAll('[data-gvp="gauge-legend"]').length, 1);
+  assert.equal(dom.currentGaugeLegendKey(doc), 'a');
+  dom.mountGaugeLegend(doc, mk('b'));
+  assert.equal(doc.querySelectorAll('[data-gvp="gauge-legend"]').length, 1);
+  assert.equal(dom.currentGaugeLegendKey(doc), 'b');
+});
+
+test('removeGaugeLegend removes it and clears the relative marker; safe when nothing is mounted', () => {
+  const doc = make(GAUGE_HTML);
+  dom.removeGaugeLegend(doc);
+  const e = doc.createElement('div');
+  e.setAttribute('data-gvp', 'gauge-legend');
+  e.setAttribute('data-gvp-key', 'a');
+  dom.mountGaugeLegend(doc, e);
+  dom.removeGaugeLegend(doc);
+  assert.equal(doc.querySelector('[data-gvp="gauge-legend"]'), null);
+  assert.equal(doc.getElementById('card').hasAttribute('data-gvp-rel'), false);
+  assert.equal(dom.currentGaugeLegendKey(doc), null);
+});
+
+test('applyPrecise leaves a mounted gauge legend alone', () => {
+  const doc = make(GAUGE_HTML.replace('id="p">', 'id="p">VO₂ Max '));
+  const card = doc.getElementById('card');
+  card.innerHTML = '<div id="v">52</div>';
+  const legend = doc.createElement('div');
+  legend.setAttribute('data-gvp', 'gauge-legend');
+  legend.setAttribute('data-gvp-key', 'a');
+  legend.innerHTML = '<div>VO₂ Max ranges</div><span id="a">54+</span><span id="b">&lt;40.5</span><span id="c">54</span>';
+  dom.mountGaugeLegend(doc, legend);
+  dom.applyPrecise(doc.body, latest);
+  assert.equal(doc.getElementById('v').textContent, '52.3');
+  assert.equal(doc.getElementById('a').textContent, '54+');
+  assert.equal(doc.getElementById('b').textContent, '<40.5');
+  assert.equal(doc.getElementById('c').textContent, '54');
+});

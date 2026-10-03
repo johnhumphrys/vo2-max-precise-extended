@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { JSDOM } = require('jsdom');
-const { renderChart, chartKey } = require('../src/chart.js');
+const { renderChart, chartKey, gaugeLegendKey, renderGaugeLegend } = require('../src/chart.js');
 
 const doc = new JSDOM('<body></body>').window.document;
 const range = { start: '2026-05-01', end: '2026-10-31' };
@@ -165,4 +165,20 @@ test('hover still works when the legend is present', () => {
   doc.body.appendChild(el);
   el.querySelector('svg').dispatchEvent(new doc.defaultView.MouseEvent('mousemove', { clientX: 850, bubbles: true }));
   assert.equal(el.querySelector('[data-gvp="tooltip"]').textContent, '31 Oct 2026: 52.0');
+});
+
+test('gaugeLegendKey is the legend label plus the current category', () => {
+  assert.equal(gaugeLegendKey(legend), 'Men 30-39|Excellent');
+  assert.equal(gaugeLegendKey({ ...legend, current: null }), 'Men 30-39|');
+});
+
+test('renderGaugeLegend is an absolutely positioned ranges list with the current row marked', () => {
+  const el = renderGaugeLegend(doc, legend);
+  assert.equal(el.getAttribute('data-gvp'), 'gauge-legend');
+  assert.equal(el.getAttribute('data-gvp-key'), 'Men 30-39|Excellent');
+  assert.match(el.style.cssText, /position:\s*absolute/);
+  assert.match(el.querySelector('[data-gvp="legend"]').firstElementChild.textContent, /^VO₂ max ranges, Men 30-39$/);
+  const rowEls = [...el.querySelectorAll('[data-gvp="legend-row"]')];
+  assert.equal(rowEls.length, 5);
+  assert.deepEqual(rowEls.map((r) => r.hasAttribute('data-gvp-current')), [false, true, false, false, false]);
 });

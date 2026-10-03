@@ -159,7 +159,7 @@
     if (doc.querySelector(`style[${ATTR}="style"]`)) return;
     const s = doc.createElement('style');
     s.setAttribute(ATTR, 'style');
-    s.textContent = `[${ATTR}-hide]{display:none!important}`;
+    s.textContent = `[${ATTR}-hide]{display:none!important}[${ATTR}-rel]{position:relative}`;
     (doc.head || doc.documentElement).appendChild(s);
   }
 
@@ -198,7 +198,42 @@
     setGarminChartHidden(doc, false);
   }
 
+  const GAUGE_CARD = `${CHART_AREA} [class*="Report_vo2MaxCurrent"]`;
+
+  function findGaugeCard(doc) {
+    return doc.querySelector(GAUGE_CARD);
+  }
+
+  function currentGaugeLegendKey(doc) {
+    const el = doc.querySelector(`[${ATTR}="gauge-legend"]`);
+    return el ? el.getAttribute(`${ATTR}-key`) : null;
+  }
+
+  function mountGaugeLegend(doc, el) {
+    const card = findGaugeCard(doc);
+    if (!card) return false;
+    ensureHideStyle(doc);
+    const old = doc.querySelector(`[${ATTR}="gauge-legend"]`);
+    if (old) {
+      if (old.getAttribute(`${ATTR}-key`) === el.getAttribute(`${ATTR}-key`) && old.parentElement === card) return true;
+      old.remove();
+    }
+    card.setAttribute(`${ATTR}-rel`, '');
+    card.appendChild(el);
+    return true;
+  }
+
+  function removeGaugeLegend(doc) {
+    const old = doc.querySelector(`[${ATTR}="gauge-legend"]`);
+    if (old) old.remove();
+    for (const e of doc.querySelectorAll(`[${ATTR}-rel]`)) e.removeAttribute(`${ATTR}-rel`);
+  }
+
   return {
+    findGaugeCard,
+    currentGaugeLegendKey,
+    mountGaugeLegend,
+    removeGaugeLegend,
     findGarminChart,
     setGarminChartHidden,
     mountChart,

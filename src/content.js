@@ -136,6 +136,24 @@
     G.setGarminChartHidden(document, true);
   }
 
+  // "Most Recent" tab: no chart, so list the ranges beside Garmin's gauge.
+  function tickGauge() {
+    const card = isVo2Report() && !labelRange() ? G.findGaugeCard(document) : null;
+    if (!card) {
+      G.removeGaugeLegend(document);
+      return;
+    }
+    ensureRanges();
+    const legend = legendNow();
+    if (!legend) {
+      G.removeGaugeLegend(document);
+      return;
+    }
+    if (G.currentGaugeLegendKey(document) !== G.gaugeLegendKey(legend)) {
+      G.mountGaugeLegend(document, G.renderGaugeLegend(document, legend));
+    }
+  }
+
   let exporting = false;
   async function runExport({ allTime, format }) {
     if (exporting) return;
@@ -175,12 +193,14 @@
       if (!isVo2Report()) {
         document.querySelector('[data-gvp="controls"]')?.remove();
         G.removeChart(document);
+        G.removeGaugeLegend(document);
       }
       if (!PAGES.test(location.pathname)) return;
       ensureLatest();
       if (latest) G.applyPrecise(document.body, latest);
       if (isVo2Report()) G.mountControls(document, actions);
       tickChart();
+      tickGauge();
     } catch (e) {
       log('tick failed', e);
     }

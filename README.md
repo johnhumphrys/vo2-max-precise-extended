@@ -11,6 +11,7 @@ to one decimal (`vo2MaxPreciseValue`) but the site shows it rounded.
   precise value (hover for the date and value). To its right it lists Garmin's VO₂ max
   ranges (Superior to Poor) for your age and sex, with your current category highlighted.
   The "Garmin's chart" button next to the export buttons switches back to Garmin's own chart.
+- On "Most Recent" the same ranges list sits to the right of the gauge.
 
 Works on `https://connect.garmin.com/app/*`. It reads the same `maxmet` endpoints
 Garmin's own page uses, with the page's CSRF token. Nothing leaves connect.garmin.com.

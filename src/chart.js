@@ -141,6 +141,19 @@
     return box;
   }
 
+  function gaugeLegendKey(legend) {
+    return `${legend.label}|${legend.current || ''}`;
+  }
+
+  function renderGaugeLegend(doc, legend) {
+    const wrap = doc.createElement('div');
+    wrap.setAttribute('data-gvp', 'gauge-legend');
+    wrap.setAttribute('data-gvp-key', gaugeLegendKey(legend));
+    wrap.style.cssText = 'position:absolute;top:0;right:0;width:170px;font:14px "Open Sans","Helvetica Neue",sans-serif';
+    wrap.appendChild(renderLegend(doc, legend));
+    return wrap;
+  }
+
   function renderChart(doc, rows, range, size = { width: 870, height: 400 }, legend = null) {
     const wrap = doc.createElement('div');
     wrap.setAttribute('data-gvp', 'chart');
@@ -212,5 +225,5 @@
     return wrap;
   }
 
-  return { niceStep, yScale, xTicks, layout, nearestPoint, formatDate, renderChart, chartKey };
+  return { niceStep, yScale, xTicks, layout, nearestPoint, formatDate, renderChart, chartKey, gaugeLegendKey, renderGaugeLegend };
 });
