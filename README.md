@@ -1,7 +1,11 @@
-# Garmin VO2 Max (precise)
+# VO2 Max Precise Extended for Garmin Connect
 
 Chrome and Firefox extension for Garmin Connect. Garmin's API returns VO2 max
 to one decimal (`vo2MaxPreciseValue`) but the site shows it rounded.
+
+Unofficial. This project is not affiliated with, endorsed by or sponsored by Garmin Ltd.
+Garmin and Garmin Connect are trademarks of Garmin Ltd. It relies on Garmin Connect's
+undocumented web endpoints, so a change on Garmin's side can break it.
 
 - The home and report pages show the precise value (hover it for Garmin's rounded one).
 - On the report pages, Garmin's Export button is replaced by a precise CSV of the
@@ -36,3 +40,29 @@ Firefox: `npx web-ext run --source-dir . --target=firefox-desktop`
 
 If Garmin changes its markup and the number stops updating, fix `src/dom.js` and add
 a jsdom test in `test/dom.test.js` that reproduces the real structure.
+
+## Release
+
+1. Bump `version` in `manifest.json` and `package.json` (stores reject a repeated version).
+2. `npm test`
+3. `npm run package` writes `dist/vo2-max-precise-extended-<version>-chrome.zip` and
+   `...-firefox.zip` (needs the `zip` command; the Chrome zip omits the Firefox-only
+   `browser_specific_settings` key).
+4. Upload the Chrome zip to the Chrome Web Store dashboard and the Firefox zip to the
+   addons.mozilla.org Developer Hub. The Firefox add-on ID in the manifest is permanent once
+   published.
+
+## Support
+
+Bugs and requests: https://github.com/johnhumphrys/vo2-max-precise-extended/issues
+
+## Privacy
+
+Everything runs in your browser on `connect.garmin.com`. The extension reads your gender and
+birth date from your Garmin profile only to pick your age band for the VO2 max ranges. Nothing
+is sent anywhere except to Garmin's own site (the same requests the page makes), and nothing is
+stored.
+
+## License
+
+MIT, see `LICENSE`.
