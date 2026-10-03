@@ -1,0 +1,12 @@
+{
+  "name": "garmin-vo2max-precise",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Show and export Garmin Connect's precise VO2 max",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0"
+  }
+}
