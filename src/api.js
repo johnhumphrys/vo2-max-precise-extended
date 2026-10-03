@@ -20,11 +20,11 @@
     return meta && meta.content ? meta.content : null;
   }
 
-  async function request(path, ctx) {
+  async function requestUrl(url, ctx) {
     const token = getToken(ctx.doc);
     if (!token) throw new GarminError('no-token', 'Garmin CSRF token not found on the page');
     const fetchFn = ctx.fetchFn || globalThis.fetch;
-    const res = await fetchFn(BASE + path, {
+    const res = await fetchFn(url, {
       credentials: 'include',
       headers: { accept: 'application/json', 'connect-csrf-token': token },
     });
@@ -33,8 +33,22 @@
     return res.json();
   }
 
+  const request = (path, ctx) => requestUrl(BASE + path, ctx);
+
   const fetchLatest = (date, ctx) => request(`/latest/${date}`, ctx);
   const fetchRange = (start, end, ctx) => request(`/daily/${start}/${end}`, ctx);
+
+  const RANGE_TABLE_URL = '/web-api/web-data/vo2Max/VO2Max.json';
+  const SETTINGS_URL = '/gc-api/userprofile-service/userprofile/user-settings/';
+
+  const fetchRangeTable = (ctx) => requestUrl(RANGE_TABLE_URL, ctx);
+
+  // Deliberately keeps only what the ranges panel needs; the rest of the profile is dropped.
+  async function fetchProfile(ctx) {
+    const json = await requestUrl(SETTINGS_URL, ctx);
+    const u = (json && json.userData) || {};
+    return { gender: u.gender ?? null, birthDate: u.birthDate ?? null };
+  }
 
   function rowsFromRaw(raw) {
     if (!Array.isArray(raw)) return [];
@@ -56,5 +70,5 @@
     return rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.sport < b.sport ? -1 : a.sport > b.sport ? 1 : 0));
   }
 
-  return { GarminError, ALL_TIME_START, getToken, fetchLatest, fetchRange, rowsFromRaw };
+  return { GarminError, ALL_TIME_START, getToken, fetchLatest, fetchRange, fetchRangeTable, fetchProfile, rowsFromRaw };
 });

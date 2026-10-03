@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { JSDOM } = require('jsdom');
 const daily = require('./fixtures/daily.json');
-const { getToken, fetchLatest, fetchRange, rowsFromRaw, GarminError, ALL_TIME_START } = require('../src/api.js');
+const { getToken, fetchLatest, fetchRange, fetchRangeTable, fetchProfile, rowsFromRaw, GarminError, ALL_TIME_START } = require('../src/api.js');
 
 const docWith = (html) => new JSDOM(html).window.document;
 const withToken = () => docWith('<meta name="csrf-token" content="tok-123">');
@@ -65,4 +65,32 @@ test('rowsFromRaw tolerates non-arrays and odd entries', () => {
 
 test('ALL_TIME_START predates Garmin Connect', () => {
   assert.equal(ALL_TIME_START, '2000-01-01');
+});
+
+test('fetchRangeTable calls the static vo2Max table with the token and cookies', async () => {
+  const table = { MALE: {} };
+  const { fetchFn, calls } = stubFetch(200, table);
+  const out = await fetchRangeTable({ doc: withToken(), fetchFn });
+  assert.equal(out, table);
+  assert.equal(calls[0].url, '/web-api/web-data/vo2Max/VO2Max.json');
+  assert.equal(calls[0].init.credentials, 'include');
+  assert.equal(calls[0].init.headers['connect-csrf-token'], 'tok-123');
+});
+
+test('fetchProfile keeps only gender and birthDate', async () => {
+  const body = { id: 5, userData: { gender: 'MALE', birthDate: '1990-06-15', weight: 70000, height: 180 }, connectDate: 'x' };
+  const { fetchFn, calls } = stubFetch(200, body);
+  const out = await fetchProfile({ doc: withToken(), fetchFn });
+  assert.deepEqual(out, { gender: 'MALE', birthDate: '1990-06-15' });
+  assert.equal(calls[0].url, '/gc-api/userprofile-service/userprofile/user-settings/');
+});
+
+test('fetchProfile tolerates a response without userData', async () => {
+  const { fetchFn } = stubFetch(200, {});
+  assert.deepEqual(await fetchProfile({ doc: withToken(), fetchFn }), { gender: null, birthDate: null });
+});
+
+test('new endpoints surface auth errors and a missing token like the others', async () => {
+  await assert.rejects(fetchRangeTable({ doc: withToken(), fetchFn: stubFetch(403).fetchFn }), (e) => e.code === 'auth');
+  await assert.rejects(fetchProfile({ doc: docWith('<p/>'), fetchFn: stubFetch(200, {}).fetchFn }), (e) => e.code === 'no-token');
 });
