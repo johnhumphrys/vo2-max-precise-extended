@@ -8,6 +8,8 @@ transparent and writes the sizes the stores and browsers use:
   icon-96.png        tight crop (Firefox high-DPI)
   icon-128.png       artwork at 96px centred in a 128px transparent canvas, which is what
                      the Chrome Web Store asks for
+  assets/icon-128-listing.png
+                     full-bleed 128px, to upload by hand as the Firefox Add-ons listing icon
 
 Run: python3 scripts/make-icons.py
 """
@@ -88,6 +90,9 @@ def main() -> None:
     art = tight_square(remove_background(Image.open(SRC)))
     for size in FULL_BLEED_SIZES:
         art.resize((size, size), Image.LANCZOS).save(OUT / f"icon-{size}.png", optimize=True)
+    # Firefox Add-ons wants the listing icon uploaded by hand (PNG/JPG, shown at up to 128px):
+    # full bleed, no padding. Lives in assets/ so it never ships in the extension zip.
+    art.resize((STORE_CANVAS, STORE_CANVAS), Image.LANCZOS).save(ROOT / "assets" / "icon-128-listing.png", optimize=True)
     canvas = Image.new("RGBA", (STORE_CANVAS, STORE_CANVAS), (0, 0, 0, 0))
     pad = (STORE_CANVAS - STORE_ART) // 2
     canvas.alpha_composite(art.resize((STORE_ART, STORE_ART), Image.LANCZOS), (pad, pad))
