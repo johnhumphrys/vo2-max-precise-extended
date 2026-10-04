@@ -53,6 +53,13 @@ a jsdom test in `test/dom.test.js` that reproduces the real structure.
    addons.mozilla.org Developer Hub. The Firefox add-on ID in the manifest is permanent once
    published.
 
+## Icons
+
+`icons/` is generated from `assets/icon-source.webp` by `python3 scripts/make-icons.py`
+(needs Python 3, Pillow and numpy). It removes the white background and writes 16, 32, 48 and
+96 px icons plus a 128 px store icon with the artwork at 96 px inside transparent padding.
+Re-run it only if the source image changes.
+
 ## Support
 
 Bugs and requests: https://github.com/johnhumphrys/vo2-max-precise-extended/issues
