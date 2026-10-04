@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "VO2 Max Precise Extended for Garmin Connect",
+  "name": "VO2 Max Extended for Garmin",
   "version": "1.0.0",
   "description": "Shows the precise VO2 max on Garmin Connect, a daily chart with your age and sex ranges, and precise CSV/JSON export.",
   "homepage_url": "https://github.com/johnhumphrys/vo2-max-precise-extended",

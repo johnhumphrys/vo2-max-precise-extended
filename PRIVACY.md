@@ -1,6 +1,6 @@
 # Privacy policy
 
-**VO2 Max Precise Extended for Garmin Connect** ("the extension"), effective 4 October 2026.
+**VO2 Max Extended for Garmin** ("the extension"), effective 4 October 2026.
 
 In short: the extension does not collect, store, sell or send your data anywhere. It works
 inside your browser, on Garmin Connect only.

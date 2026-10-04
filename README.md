@@ -1,4 +1,4 @@
-# VO2 Max Precise Extended for Garmin Connect
+# VO2 Max Extended for Garmin
 
 Chrome and Firefox extension for Garmin Connect. Garmin's API returns VO2 max
 to one decimal (`vo2MaxPreciseValue`) but the site shows it rounded.
